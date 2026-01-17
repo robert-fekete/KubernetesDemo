@@ -1,9 +1,9 @@
-# Kubernetes Demo
-## Steps
-- Set up a k3s cluster
-- 
 
-## Setting up a k3s cluster
+# Steps
+- Set up a k3s cluster
+- Set up add-ons
+
+# Setting up a k3s cluster
 We are setting up a cluster with 1 server node (control plane) and 4 agent nodes (kubelet, etc.)
 ```
 k3d cluster create k8s-demo \
@@ -12,12 +12,13 @@ k3d cluster create k8s-demo \
   --port "8080:80@loadbalancer" \
   --k3s-arg "--disable=traefik@server:0"
 ```
-Verify
+
+### Current pods
 ```
 kubectl get nodes
 kubectl get pods -A
 ```
-Current pods
+Output
 ```
 NAME                    STATUS   ROLES                  AGE     VERSION
 k3d-k8s-demo-agent-0    Ready    <none>                 3m37s   v1.31.5+k3s1    <------
@@ -29,24 +30,86 @@ kube-system   coredns-ccb96694c-4zx2d                   1/1     Running   0     
 kube-system   local-path-provisioner-5cf85fd84d-bf6r2   1/1     Running   0          3m32s
 kube-system   metrics-server-5985cbc9d7-j8tqd           1/1     Running   0          3m32s
 ```
-Check contexts
+
+### Check contexts
 ```
 kubectl config get-contexts
 kubectl config current-context
 ```
-Current contexts
+Output
 ```
 CURRENT   NAME           CLUSTER        AUTHINFO             NAMESPACE
 *         k3d-k8s-demo   k3d-k8s-demo   admin@k3d-k8s-demo   
 ```
 
-## Appendix
-### Dependencies
-Docker
+# Setting up Add-ons
+We are setting up Envoy Gateway, monitoring (Prometheus + Grafana), logging (Grafana + Loki/Alloy) and metrics-server here. 
+
+### Setting up Helm
+```
+helm repo add metrics-server https://kubernetes-sigs.github.io/metrics-server/
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo add grafana https://grafana.github.io/helm-charts
+helm repo update
+```
+
+### Creating namespaces
+```
+kubectl create namespace monitoring   --dry-run=client -o yaml | kubectl apply -f -
+kubectl create namespace logging      --dry-run=client -o yaml | kubectl apply -f -
+kubectl create namespace demo         --dry-run=client -o yaml | kubectl apply -f -
+```
+
+### Install metrics-server
+Note: This step is for reference. In my k3s setup metrics-server was already installed.
+```
+# Install
+helm install metrics-server metrics-server/metrics-server \
+  --namespace kube-system
+
+# Verify
+kubectl get apiservice v1beta1.metrics.k8s.io
+kubectl top nodes
+kubectl top pods -A | head
+```
+
+### Install Prometheus + Grafana
+```
+# Install
+helm install monitoring prometheus-community/kube-prometheus-stack \
+  --namespace monitoring
+
+# Verify
+kubectl -n monitoring get pods
+
+# Port forward (forward tunnel, only for testing)
+kubectl -n monitoring port-forward --address 0.0.0.0 svc/monitoring-grafana 3000:80
+
+# Get admin password
+kubectl -n monitoring get secret monitoring-grafana \
+  -o jsonpath='{.data.admin-password}' | base64 -d; echo
+```
+
+### Install Loki + log collector
+```
+# Install
+helm install loki grafana/loki --namespace logging
+helm install alloy grafana/alloy --namespace logging
+```
+
+
+
+# Helpful commands
+Lists all pods
+`kubectl get pods --all-namespace`
+
+# Appendix
+## Dependencies
+### Docker
 ```
 sudo apt-get remove -y docker docker-engine docker.io containerd runc || true # optional
 
-# Update registry
+# Update sources
 sudo apt-get update
 sudo apt-get install -y ca-certificates curl
 sudo install -m 0755 -d /etc/apt/keyrings
@@ -68,9 +131,9 @@ sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plug
 sudo docker run --rm hello-world
 ```
 
-Kubernetes
+### Kubernetes
 ```
-# Update registry
+# Update sources
 sudo apt-get update
 sudo apt-get install -y ca-certificates curl
 
@@ -90,7 +153,24 @@ sudo apt-get install -y kubectl
 kubectl version --client
 ```
 
-K3s
+### K3s
 ```
 curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
+```
+
+### Helm
+```
+# Download install script
+sudo apt-get update
+sudo apt-get install -y curl
+
+curl -fsSL -o /tmp/get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+chmod 700 /tmp/get_helm.sh
+
+# Optional but recommended: review what you’re about to run
+sed -n '1,160p' /tmp/get_helm.sh
+
+# Install
+sudo /tmp/get_helm.sh
+helm version
 ```
