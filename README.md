@@ -123,6 +123,11 @@ kubectl wait --timeout=5m -n envoy-gateway-system deployment/envoy-gateway --for
 # Apply default routing
 kubectl apply -f https://github.com/envoyproxy/gateway/releases/download/v1.6.2/quickstart.yaml -n default
 
+# Set up proxy
+kubectl apply -f infra/gateway/envoyproxy/nodeport.yaml
+kubectl apply -f infra/gateway/envoy-gateway/gatewayclass.yaml
+
+
 # Verify
 kubectl get gatewayclass
 kubectl get gateway -A
@@ -132,7 +137,7 @@ kubectl get httproute -A
 # Setting up Gateway
 ### Fetch Gateway class name
 ```
-# Note: Gateway class is needed in the `infra/gateway/envoy-gateway/values.yaml`
+# Note: Gateway class is needed in the `infra/gateway/envoy-gateway/gateway.yaml`
 GWC_NAME="$(kubectl get gatewayclass -o jsonpath='{.items[0].metadata.name}')"
 echo "Using GatewayClass: $GWC_NAME"
 ```
@@ -140,7 +145,7 @@ echo "Using GatewayClass: $GWC_NAME"
 ### Apply gateway and routing config
 ```
 # Apply
-kubectl apply -f infra/gateway/envoy-gateway/values.yaml  # Update `gatewayClassName` based on above
+kubectl apply -f infra/gateway/envoy-gateway/gateway.yaml  # Update `gatewayClassName` based on above
 kubectl apply -f infra/gateway/routes/grafana.yaml
 
 # Add port forwarding
