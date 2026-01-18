@@ -98,9 +98,16 @@ kubectl -n monitoring get secret monitoring-grafana \
 # Install
 helm install alloy grafana/alloy --namespace logging
 helm upgrade --install loki grafana/loki -n logging -f infra/logging/loki/values.yaml
-
+helm upgrade --install alloy grafana/alloy -n logging -f infra/logging/alloy/values.yaml
+helm upgrade monitoring prometheus-community/kube-prometheus-stack -n monitoring \
+  -f infra/monitoring/kube-prometheus-stack/loki-source.yaml
+  
 # Verify
 kubectl -n logging get pods,svc,pvc
+
+# Confirms Alloy is running; after a minute you should see logs being shipped.
+kubectl -n logging get pods
+kubectl -n logging logs deploy/alloy --tail=50
 ```
 
 ### Install Envoy Gateway
@@ -155,16 +162,14 @@ kubectl -n monitoring get httproute grafana-route -o wide
 kubectl -n monitoring describe httproute grafana-route | sed -n '/Status:/,$p'
 ```
 
-
 # Next steps
-- Once both are running, Grafana should be able to add Loki as a data source (we’ll do that next, and wire Alloy → Loki properly with a values file).
--   Note: Loki/Alloy wiring needs a small values config so Alloy knows where Loki is. We’ll do that in the repo (so it’s GitOps-friendly) instead of ad-hoc commands.
 - What’s next after these installs?
 - Put all config into your Git repo as Helm values + Flux manifests (so “cluster builds itself from Git”).
 - Install/Bootstrap Flux onto the cluster pointing at your GitHub repo.
 - Create your Java API Helm chart + a GitHub Actions workflow to build/push the image to GHCR.
 - Delete www.example.com route
 - Flux image automation (optional but nice) to update the image tag in Git automatically.
+- HPA?
 
 
 # Helpful commands
@@ -182,6 +187,9 @@ kubectl -n monitoring describe httproute grafana-route | sed -n '/Status:/,$p'
 
 #### Opening a shell in a pod
 `kubectl -n <pod namespace> exec -it <pod-name> -- sh`
+
+#### Read logs from pod
+`kubectl -n logging logs <pod> -c <container> --tail=100`
 
 # Appendix
 ## Dependencies

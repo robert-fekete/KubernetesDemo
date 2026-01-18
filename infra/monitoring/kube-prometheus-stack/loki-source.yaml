@@ -1,0 +1,10 @@
+# infra/monitoring/kube-prometheus-stack/values.yaml
+grafana:
+  sidecar:
+    datasources:
+      enabled: true
+  additionalDataSources:
+    - name: Loki
+      type: loki
+      access: proxy
+      url: http://loki.logging.svc.cluster.local:3100
