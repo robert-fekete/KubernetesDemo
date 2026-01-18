@@ -3,6 +3,7 @@
 - Set up a k3s cluster
 - Set up add-ons
 - Set up Gateway
+- Set up Flux
 
 # Setting up a k3s cluster
 We are setting up a cluster with 1 server node (control plane) and 4 agent nodes (kubelet, etc.)
@@ -167,6 +168,56 @@ kubectl -n monitoring get httproute grafana-route -o wide
 kubectl -n monitoring describe httproute grafana-route | sed -n '/Status:/,$p'
 ```
 
+# Setting up Flux
+### Bootstrapping Flux
+```
+export GITHUB_TOKEN="<your_pat>"
+export GITHUB_OWNER="robert-fekete"
+export GITHUB_REPO="KubernetesDemo"
+
+flux bootstrap github \
+  --owner="$GITHUB_OWNER" \
+  --repository="$GITHUB_REPO" \
+  --branch=main \
+  --path=clusters/dev \
+  --personal \
+  --token-auth \
+  --components-extra=image-reflector-controller,image-automation-controller
+
+# Verify
+flux check
+kubectl -n flux-system get pods
+```
+
+### Configuring Flux + Kustomization
+```
+# Set up kustomization.yaml and helmrelease.yaml files
+
+# Commit to Git
+git add -A
+git commit -m "Configuring Flux + Kustomization"
+git push origin main
+
+# Reconcile Flux
+flux reconcile source git flux-system -n flux-system
+flux reconcile kustomization flux-system -n flux-system
+flux reconcile kustomization platform -n flux-system
+
+# Verify
+flux get kustomizations -A
+flux get sources all -A
+flux get helmreleases -A
+kubectl get pods -A
+
+# Troubleshoot if (when?) needed
+flux get all -A
+kubectl -n flux-system get events --sort-by=.lastTimestamp | tail -n 50
+kubectl -n flux-system logs deploy/kustomize-controller --tail=200
+kubectl -n flux-system logs deploy/helm-controller --tail=200
+kubectl -n flux-system logs deploy/source-controller --tail=200
+```
+
+
 # Next steps
 - What’s next after these installs?
 - Put all config into your Git repo as Helm values + Flux manifests (so “cluster builds itself from Git”).
@@ -265,5 +316,25 @@ sed -n '1,160p' /tmp/get_helm.sh
 
 # Install
 sudo /tmp/get_helm.sh
+
+# Verify
 helm version
 ```
+
+### Flux
+```
+# Download install script
+curl -s -o /tmp/install_flux.sh https://fluxcd.io/install.sh
+chmod 700 /tmp/install_flux.sh
+
+# Review
+sed -n '1,160p' /tmp/install_flux.sh
+
+# Install
+sudo /tmp/install_flux.sh
+
+# Verify
+flux version
+
+# Pre-flight checks
+flux check --pre
