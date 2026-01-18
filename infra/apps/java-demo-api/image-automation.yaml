@@ -1,0 +1,49 @@
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImageRepository
+metadata:
+  name: java-demo-api
+  namespace: flux-system
+spec:
+  image: ghcr.io/robert-fekete/java-demo-api
+  interval: 1m
+
+---
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImagePolicy
+metadata:
+  name: java-demo-api
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: java-demo-api
+  filterTags:
+    pattern: '^[0-9]{14}-[0-9a-f]{7}$'
+  policy:
+    alphabetical:
+      order: desc
+
+---
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImageUpdateAutomation
+metadata:
+  name: java-demo-api
+  namespace: flux-system
+spec:
+  interval: 2m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  git:
+    checkout:
+      ref:
+        branch: main
+    commit:
+      author:
+        name: flux-bot
+        email: flux-bot@users.noreply.github.com
+      messageTemplate: "chore(images): update java-demo-api to {{range .Updated.Images}}{{println .}}{{end}}"
+    push:
+      branch: main
+  update:
+    path: ./infra/apps/java-demo-api
+    strategy: Setters

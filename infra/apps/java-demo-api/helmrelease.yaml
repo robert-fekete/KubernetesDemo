@@ -1,0 +1,29 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: java-demo-api
+  namespace: java-demo
+spec:
+  interval: 5m
+  chart:
+    spec:
+      chart: ./charts/java-demo-api
+      sourceRef:
+        kind: GitRepository
+        name: flux-system
+        namespace: flux-system
+  install:
+    createNamespace: false
+  upgrade:
+    cleanupOnFail: true
+  values:
+    replicaCount: 1
+    service:
+      port: 9000
+    sqlite:
+      enabled: true
+      pvcSize: 1Gi
+  valuesFrom:
+    - kind: ConfigMap
+      name: java-demo-api-image
+      valuesKey: values-image.yaml

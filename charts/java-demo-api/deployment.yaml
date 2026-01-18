@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: java-demo-api
+  labels:
+    app.kubernetes.io/name: java-demo-api
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: java-demo-api
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: java-demo-api
+    spec:
+      containers:
+        - name: java-demo-api
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 9000
+          env:
+            - name: SQLITE_PATH
+              value: "{{ .Values.sqlite.mountPath }}/app.db"
+          {{- if .Values.sqlite.enabled }}
+          volumeMounts:
+            - name: sqlite-data
+              mountPath: {{ .Values.sqlite.mountPath }}
+          {{- end }}
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+      {{- if .Values.sqlite.enabled }}
+      volumes:
+        - name: sqlite-data
+          persistentVolumeClaim:
+            claimName: java-api-sqlite
+      {{- end }}

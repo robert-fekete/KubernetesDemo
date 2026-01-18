@@ -248,8 +248,12 @@ git push origin main
 flux reconcile source git flux-system -n flux-system
 flux reconcile kustomization platform -n flux-system
 
+# Get info about running reconciliation
+flux get kustomization platform -n flux-system
+
 # Verify relevant kubectl commands
 ```
+
 
 ## Bootstrap a new cluster
 ```
@@ -325,7 +329,7 @@ kubectl get httproutes -A -l kustomize.toolkit.fluxcd.io/name=platform
 - HPA?
 
 
-# Helpful commands
+# Useful commands
 #### Current config context
 `kubectl config current-context`
 

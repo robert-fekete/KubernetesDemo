@@ -1,0 +1,14 @@
+{{- if .Values.sqlite.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: java-api-sqlite
+  labels:
+    app.kubernetes.io/name: java-demo-api
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.sqlite.pvcSize }}
+{{- end }}

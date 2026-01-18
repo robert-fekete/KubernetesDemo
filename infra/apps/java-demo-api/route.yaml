@@ -1,0 +1,19 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: java-demo-api
+  namespace: java-demo
+spec:
+  parentRefs:
+    - name: main-gw
+      namespace: gateway
+  hostnames:
+    - api.local
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: java-demo-api
+          port: 9000
