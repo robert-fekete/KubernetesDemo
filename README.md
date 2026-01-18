@@ -1,11 +1,11 @@
 
-# Steps
+# Manual setup steps
 - Set up a k3s cluster
 - Set up add-ons
 - Set up Gateway
 - Set up Flux
 
-# Setting up a k3s cluster
+## Setting up a k3s cluster
 We are setting up a cluster with 1 server node (control plane) and 4 agent nodes (kubelet, etc.)
 ### Create cluster
 ```
@@ -45,7 +45,7 @@ CURRENT   NAME           CLUSTER        AUTHINFO             NAMESPACE
 *         k3d-k8s-demo   k3d-k8s-demo   admin@k3d-k8s-demo   
 ```
 
-# Setting up Add-ons
+## Setting up Add-ons
 We are setting up Envoy Gateway, monitoring (Prometheus + Grafana), logging (Grafana + Loki/Alloy) and metrics-server here. 
 
 ### Setting up Helm
@@ -135,7 +135,7 @@ kubectl get gateway -A
 kubectl get httproute -A
 ```
 
-# Setting up Gateway
+## Setting up Gateway
 ### Fetch Gateway class name
 ```
 # Note: Gateway class is needed in the `infra/gateway/envoy-gateway/gateway.yaml`
@@ -168,7 +168,7 @@ kubectl -n monitoring get httproute grafana-route -o wide
 kubectl -n monitoring describe httproute grafana-route | sed -n '/Status:/,$p'
 ```
 
-# Setting up Flux
+## Setting up Flux
 ### Bootstrapping Flux
 ```
 export GITHUB_TOKEN="<your_pat>"
@@ -204,10 +204,12 @@ flux reconcile kustomization flux-system -n flux-system
 flux reconcile kustomization platform -n flux-system
 
 # Verify
-flux get kustomizations -A
-flux get sources all -A
-flux get helmreleases -A
-kubectl get pods -A
+flux get kustomizations -A         # Check if READY=True
+flux check                         # Check if all checks passed
+kubectl -n flux-system get pods    # Check if all Flex related pods are running
+flux get helmreleases -A           # Check if READY=True
+flux get sources all -A            # Check if READY=True
+kubectl get pods -A                # Check if all pods are running
 
 # Troubleshoot if (when?) needed
 flux get all -A
@@ -217,11 +219,106 @@ kubectl -n flux-system logs deploy/helm-controller --tail=200
 kubectl -n flux-system logs deploy/source-controller --tail=200
 ```
 
+# Flux managed operations
+
+## Health check
+```
+flux check                   # Check if all check passes
+flux get kustomizations -A   # Check if READY=True
+flux get helmreleases -A     # Check if READY=True
+```
+
+## Diff agains local manifests
+```
+flux diff kustomization platform \
+  -n flux-system \
+  --path "$(pwd)/infra"
+```
+
+## Make a change
+```
+# Change the values files under `./infa`
+
+# Commit and push
+git add -A
+git commit -m "..."
+git push origin main
+
+# Reconcile (optional, flux will eventually reconcile the changes)
+flux reconcile source git flux-system -n flux-system
+flux reconcile kustomization platform -n flux-system
+
+# Verify relevant kubectl commands
+```
+
+## Bootstrap a new cluster
+```
+# Ensure kubectl current-context is correct
+kubectl config current-context
+kubectl get nodes
+
+# Bootstrap flux
+export GITHUB_TOKEN="<your_pat>"
+export GITHUB_OWNER="robert-fekete"
+export GITHUB_REPO="KubernetesDemo"
+
+flux bootstrap github \
+  --owner="$GITHUB_OWNER" \
+  --repository="$GITHUB_REPO" \
+  --branch=main \
+  --path=clusters/dev \
+  --personal \
+  --token-auth \
+  --components-extra=image-reflector-controller,image-automation-controller
+
+# Verify
+flux check                   # Check if all check passes
+flux get kustomizations -A   # Check if READY=True
+flux get helmreleases -A     # Check if READY=True
+```
+
+## Detect and fix drify
+```
+# Detect
+flux diff kustomization platform -n flux-system --path ./infra
+
+# Fix
+# Make git match what you want, commit, push, reconcile (manually or automatically)
+# You might need to check the HelmRelease status as well
+```
+
+## Debugging
+```
+# Identify what is failing
+flux get kustomizations -A
+flux get helmreleases -A
+flux get sources all -A
+
+# Check events
+kubectl -n flux-system get events --sort-by=.lastTimestamp | tail -n 80
+
+# Check rollout logs
+kubectl -n flux-system logs deploy/source-controller --tail=200
+kubectl -n flux-system logs deploy/kustomize-controller --tail=200
+kubectl -n flux-system logs deploy/helm-controller --tail=200
+```
+
+## Detecting resources not managed by Flux
+```
+# Inventory
+kubectl -n flux-system get kustomization platform -o jsonpath='{range .status.inventory.entries[*]}{.id}{"\n"}{end}' | sort
+
+# Flux topology
+flux tree kustomization platform -n flux-system
+
+# List all e.g. http routes with kustomize label
+kubectl get httproutes -A -l kustomize.toolkit.fluxcd.io/name=platform
+
+```
+
 
 # Next steps
 - What’s next after these installs?
-- Put all config into your Git repo as Helm values + Flux manifests (so “cluster builds itself from Git”).
-- Install/Bootstrap Flux onto the cluster pointing at your GitHub repo.
 - Create your Java API Helm chart + a GitHub Actions workflow to build/push the image to GHCR.
 - Delete www.example.com route
 - Flux image automation (optional but nice) to update the image tag in Git automatically.
