@@ -2,9 +2,11 @@
 # Steps
 - Set up a k3s cluster
 - Set up add-ons
+- Set up Gateway
 
 # Setting up a k3s cluster
 We are setting up a cluster with 1 server node (control plane) and 4 agent nodes (kubelet, etc.)
+### Create cluster
 ```
 k3d cluster create k8s-demo \
   --servers 1 \
@@ -58,6 +60,7 @@ helm repo update
 kubectl create namespace monitoring   --dry-run=client -o yaml | kubectl apply -f -
 kubectl create namespace logging      --dry-run=client -o yaml | kubectl apply -f -
 kubectl create namespace demo         --dry-run=client -o yaml | kubectl apply -f -
+kubectl create namespace gateway      --dry-run=client -o yaml | kubectl apply -f -
 ```
 
 ### Install metrics-server
@@ -119,8 +122,49 @@ kubectl get gateway -A
 kubectl get httproute -A
 ```
 
+# Setting up Gateway
+### Fetch Gateway class name
+```
+# Note: Gateway class is needed in the `infra/gateway/envoy-gateway/values.yaml`
+GWC_NAME="$(kubectl get gatewayclass -o jsonpath='{.items[0].metadata.name}')"
+echo "Using GatewayClass: $GWC_NAME"
+```
+
+### Apply gateway and routing config
+```
+# Apply
+kubectl apply -f infra/gateway/envoy-gateway/values.yaml  # Update `gatewayClassName` based on above
+kubectl apply -f infra/gateway/routes/grafana.yaml
+
+# Add port forwarding
+GATEWAY_SERVICE=$(kubectl -n envoy-gateway-system get svc \
+  -l gateway.envoyproxy.io/owning-gateway-name=main-gw,gateway.envoyproxy.io/owning-gateway-namespace=gateway \
+  -o jsonpath='{.items[0].metadata.name}')
+NODEPORT=$(kubectl -n envoy-gateway-system get svc "$GATEWAY_SERVICE" \
+  -o jsonpath='{.spec.ports[0].nodePort}')
+echo "Envoy NodePort: $NODEPORT"
+k3d cluster edit k8s-demo --port-add "8081:${NODEPORT}@loadbalancer"
+
+# Verify
+curl -I -H "Host: grafana.local" http://127.0.0.1:8081/
+
+kubectl -n gateway get gateway main-gw -o wide
+kubectl -n gateway describe gateway main-gw | sed -n '/Status:/,$p'
+
+kubectl -n monitoring get httproute grafana-route -o wide
+kubectl -n monitoring describe httproute grafana-route | sed -n '/Status:/,$p'
+```
 
 
+# Next steps
+- Once both are running, Grafana should be able to add Loki as a data source (we’ll do that next, and wire Alloy → Loki properly with a values file).
+-   Note: Loki/Alloy wiring needs a small values config so Alloy knows where Loki is. We’ll do that in the repo (so it’s GitOps-friendly) instead of ad-hoc commands.
+- What’s next after these installs?
+- Put all config into your Git repo as Helm values + Flux manifests (so “cluster builds itself from Git”).
+- Install/Bootstrap Flux onto the cluster pointing at your GitHub repo.
+- Create your Java API Helm chart + a GitHub Actions workflow to build/push the image to GHCR.
+- Delete www.example.com route
+- Flux image automation (optional but nice) to update the image tag in Git automatically.
 
 
 # Helpful commands
