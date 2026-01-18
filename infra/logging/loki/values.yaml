@@ -1,0 +1,44 @@
+deploymentMode: SingleBinary
+
+singleBinary:
+  replicas: 1
+  persistence:
+    enabled: true
+    size: 5Gi
+    # storageClass: null  # leave unset to use the cluster default StorageClass
+
+# Make sure scalable-mode targets are not deployed.
+read:
+  replicas: 0
+write:
+  replicas: 0
+backend:
+  replicas: 0
+
+loki:
+  auth_enabled: false
+  commonConfig:
+    replication_factor: 1
+
+  # Loki Helm values reference includes a filesystem storage option. :contentReference[oaicite:2]{index=2}
+  storage:
+    type: filesystem
+    filesystem:
+      chunks_directory: /var/loki/chunks
+      rules_directory: /var/loki/rules
+
+    # Helm chart workaround: chart currently may require bucketNames even when using filesystem. :contentReference[oaicite:3]{index=3}
+    bucketNames:
+      chunks: dummy
+      ruler: dummy
+      admin: dummy
+
+  schemaConfig:
+    configs:
+      - from: "2024-04-01"
+        store: tsdb
+        object_store: filesystem
+        schema: v13
+        index:
+          prefix: loki_index_
+          period: 24h

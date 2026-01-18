@@ -93,15 +93,51 @@ kubectl -n monitoring get secret monitoring-grafana \
 ### Install Loki + log collector
 ```
 # Install
-helm install loki grafana/loki --namespace logging
 helm install alloy grafana/alloy --namespace logging
+helm upgrade --install loki grafana/loki -n logging -f infra/logging/loki/values.yaml
+
+# Verify
+kubectl -n logging get pods,svc,pvc
+```
+
+### Install Envoy Gateway
+```
+helm install eg oci://docker.io/envoyproxy/gateway-helm \
+  --version v1.6.2 \
+  -n envoy-gateway-system \
+  --create-namespace
+
+# Wait until ready
+kubectl wait --timeout=5m -n envoy-gateway-system deployment/envoy-gateway --for=condition=Available
+
+# Apply default routing
+kubectl apply -f https://github.com/envoyproxy/gateway/releases/download/v1.6.2/quickstart.yaml -n default
+
+# Verify
+kubectl get gatewayclass
+kubectl get gateway -A
+kubectl get httproute -A
 ```
 
 
 
+
+
 # Helpful commands
-Lists all pods
+#### Current config context
+`kubectl config current-context`
+
+#### Listing all nodes
+`kubectl get nodes -o wide`
+
+#### Lists all pods
 `kubectl get pods --all-namespace`
+
+#### `top` for K8s
+`kubectl top nodes`
+
+#### Opening a shell in a pod
+`kubectl -n <pod namespace> exec -it <pod-name> -- sh`
 
 # Appendix
 ## Dependencies
