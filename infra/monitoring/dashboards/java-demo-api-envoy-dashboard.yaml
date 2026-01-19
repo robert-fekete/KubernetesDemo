@@ -67,7 +67,7 @@ data:
               "refId": "A",
               "expr": "histogram_quantile(0.95, sum(rate(envoy_cluster_upstream_rq_time_bucket{envoy_cluster_name=~\"$cluster_regex\"}[5m])) by (le))",
               "legendFormat": "p95"
-            }
+            },
             {
               "refId": "B",
               "expr": "histogram_quantile(0.5, sum(rate(envoy_cluster_upstream_rq_time_bucket{envoy_cluster_name=~\"$cluster_regex\"}[5m])) by (le))",
