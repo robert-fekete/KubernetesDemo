@@ -21,7 +21,7 @@ spec:
     extract: '$tag'
   policy:
     alphabetical:
-      order: desc
+      order: asc
 
 ---
 apiVersion: image.toolkit.fluxcd.io/v1beta2
