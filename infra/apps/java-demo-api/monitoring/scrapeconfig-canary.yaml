@@ -1,0 +1,28 @@
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: ScrapeConfig
+metadata:
+  name: java-demo-api-canary
+  namespace: monitoring
+  labels:
+    release: monitoring
+    app.kubernetes.io/name: java-demo-api
+spec:
+  staticConfigs:
+    - targets:
+        - blackbox-exporter-prometheus-blackbox-exporter.monitoring.svc.cluster.local:9115
+      labels:
+        app: java-demo-api
+        canary_target: api-local-health
+  metricsPath: /probe
+  params:
+    module:
+      - http_java_demo_api_health
+    target:
+      - http://envoy-gateway-main-gw-659460d2.envoy-gateway-system.svc.cluster.local/health
+  relabelings:
+    # Send the real probe target as a URL parameter to blackbox exporter
+    - sourceLabels: [__param_target]
+      targetLabel: instance
+    # Ensure we always scrape the blackbox exporter service
+    - targetLabel: __address__
+      replacement: blackbox-exporter-prometheus-blackbox-exporter.monitoring.svc.cluster.local:9115
