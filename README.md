@@ -302,10 +302,21 @@ flux get sources all -A
 kubectl -n flux-system get events --sort-by=.lastTimestamp | tail -n 80
 kubectl -n java-demo get events --sort-by=.lastTimestamp | tail -n 80 # Useful if reconciliation is incomplete
 
+# Get Helm status
+flux get helmrelease java-demo-api -n java-demo
+helm -n java-demo status java-demo-api
+
+# Get Helm logs
+kubectl -n java-demo describe helmrelease java-demo-api
+kubectl -n flux-system logs deploy/helm-controller --tail=200
+
 # Get Helm manifest
 helm -n java-demo get manifest java-demo-api
 # Render locally
 helm template java-demo-api ./charts/java-demo-api -n java-demo
+
+# Describe reconciliation
+kubectl -n flux-system describe kustomization platform
 
 # Check rollout logs
 kubectl -n flux-system logs deploy/source-controller --tail=200

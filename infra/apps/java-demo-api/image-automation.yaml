@@ -17,7 +17,8 @@ spec:
   imageRepositoryRef:
     name: java-demo-api
   filterTags:
-    pattern: '^[0-9]{14}-[0-9a-f]{7}$'
+    pattern: '^(?P<tag>[0-9]{14}-[0-9a-f]{7})$'
+    extract: '$tag'
   policy:
     alphabetical:
       order: desc
