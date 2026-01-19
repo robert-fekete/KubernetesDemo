@@ -1,0 +1,20 @@
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: java-demo-api-health-probe
+  namespace: monitoring
+  labels:
+    release: monitoring
+    app.kubernetes.io/name: java-demo-api
+spec:
+  interval: 10s
+  module: http_java_demo_api_health
+  prober:
+    url: http://blackbox-exporter-prometheus-blackbox-exporter.monitoring.svc.cluster.local:9115
+  targets:
+    staticConfig:
+      labels:
+        app: java-demo-api
+        target: api-local-health
+      static:
+        - http://envoy-gateway-main-gw-659460d2.envoy-gateway-system.svc.cluster.local/health

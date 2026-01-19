@@ -15,3 +15,4 @@ resources:
   - image-automation.yaml
   - helmrelease.yaml
   - route.yaml
+  - monitoring
