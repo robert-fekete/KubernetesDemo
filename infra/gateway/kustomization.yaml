@@ -8,3 +8,4 @@ resources:
   - envoyproxy/metrics-servicemonitor.yaml
   - envoy-gateway/gateway.yaml
   - routes/grafana.yaml
+  - routes/prometheus.yaml
