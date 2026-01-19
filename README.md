@@ -281,7 +281,7 @@ flux get kustomizations -A   # Check if READY=True
 flux get helmreleases -A     # Check if READY=True
 ```
 
-## Detect and fix drify
+## Detect and fix drifts
 ```
 # Detect
 flux diff kustomization platform -n flux-system --path ./infra
@@ -300,6 +300,12 @@ flux get sources all -A
 
 # Check events
 kubectl -n flux-system get events --sort-by=.lastTimestamp | tail -n 80
+kubectl -n java-demo get events --sort-by=.lastTimestamp | tail -n 80 # Useful if reconciliation is incomplete
+
+# Get Helm manifest
+helm -n java-demo get manifest java-demo-api
+# Render locally
+helm template java-demo-api ./charts/java-demo-api -n java-demo
 
 # Check rollout logs
 kubectl -n flux-system logs deploy/source-controller --tail=200
