@@ -4,7 +4,7 @@ metadata:
   name: java-demo-api
   namespace: flux-system
 spec:
-  image: ghcr.io/robert-fekete/java-demo-api
+  image: ghcr.io/robert-fekete/kubernetes-demo-java-api
   interval: 1m
 
 ---
