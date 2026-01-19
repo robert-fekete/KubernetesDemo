@@ -1,3 +1,2 @@
 image:
-  repository: ghcr.io/robert-fekete/kubernetes-demo-java-api
-  tag: "ghcr.io/robert-fekete/kubernetes-demo-java-api:20260119105528-2d94608" # {"$imagepolicy": "flux-system:java-demo-api"}
+  ref: "ghcr.io/robert-fekete/kubernetes-demo-java-api:20260119105528-2d94608" # {"$imagepolicy": "flux-system:java-demo-api"}

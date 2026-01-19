@@ -1,8 +1,7 @@
 replicaCount: 1
 
 image:
-  repository: ghcr.io/robert-fekete/kubernetes-demo-java-api
-  tag: "00000000000000-0000000"
+  ref: ghcr.io/robert-fekete/kubernetes-demo-java-api:00000000000000-0000000
   pullPolicy: IfNotPresent
 
 service:

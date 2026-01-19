@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: java-demo-api
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          image: "{{ .Values.image.ref }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - name: http
