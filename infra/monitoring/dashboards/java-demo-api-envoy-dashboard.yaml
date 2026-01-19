@@ -22,7 +22,7 @@ data:
             "name": "cluster_regex",
             "type": "constant",
             "label": "Envoy cluster match",
-            "query": ".*java-demo.*9000.*",
+            "query": "^httproute/java-demo/java-demo-api/.*$",
             "hide": 0
           },
           {
@@ -42,6 +42,20 @@ data:
         ]
       },
       "panels": [
+        {
+          "type": "timeseries",
+          "title": "Request rate (RPS) to the Java Demo API (Envoy downstream)",
+          "id": 1,
+          "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum(rate(envoy_http_downstream_rq_total{envoy_cluster_name=~\"$cluster_regex\"}[1m]))",
+              "legendFormat": "RPS"
+            }
+          ]
+        },
         {
           "type": "timeseries",
           "title": "Request rate (RPS) to the Java Demo API (Envoy upstream)",
