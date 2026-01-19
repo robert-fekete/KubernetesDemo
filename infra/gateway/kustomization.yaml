@@ -4,5 +4,7 @@ resources:
   - envoy-gateway/helmrelease.yaml
   - envoy-gateway/gatewayclass.yaml
   - envoyproxy/nodeport.yaml
+  - envoyproxy/metrics-service.yaml
+  - envoyproxy/metrics-servicemonitor.yaml
   - envoy-gateway/gateway.yaml
   - routes/grafana.yaml

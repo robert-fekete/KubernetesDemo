@@ -1,0 +1,88 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-java-demo-api-envoy
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  java-demo-api-envoy.json: |
+    {
+      "uid": "java-demo-api-envoy",
+      "title": "Java Demo API (via Envoy Gateway)",
+      "tags": ["demo", "envoy", "gateway-api", "java-demo"],
+      "timezone": "browser",
+      "schemaVersion": 39,
+      "version": 1,
+      "refresh": "10s",
+      "time": { "from": "now-15m", "to": "now" },
+      "templating": {
+        "list": [
+          {
+            "name": "cluster_regex",
+            "type": "constant",
+            "label": "Envoy cluster match",
+            "query": ".*java-demo.*9000.*",
+            "hide": 0
+          },
+          {
+            "name": "namespace",
+            "type": "constant",
+            "label": "App namespace",
+            "query": "java-demo",
+            "hide": 0
+          },
+          {
+            "name": "deployment",
+            "type": "constant",
+            "label": "Deployment",
+            "query": "java-demo-api",
+            "hide": 0
+          }
+        ]
+      },
+      "panels": [
+        {
+          "type": "timeseries",
+          "title": "Request rate (RPS) to the Java Demo API (Envoy upstream)",
+          "id": 1,
+          "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum(rate(envoy_cluster_upstream_rq_total{envoy_cluster_name=~\"$cluster_regex\"}[1m]))",
+              "legendFormat": "RPS"
+            }
+          ]
+        },
+        {
+          "type": "timeseries",
+          "title": "Upstream latency p95 (ms) to the Java Demo API (Envoy)",
+          "id": 2,
+          "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "1000 * histogram_quantile(0.95, sum(rate(envoy_cluster_upstream_rq_time_bucket{envoy_cluster_name=~\"$cluster_regex\"}[5m])) by (le))",
+              "legendFormat": "p95"
+            }
+          ]
+        },
+        {
+          "type": "timeseries",
+          "title": "Deployment replicas available (java-demo-api)",
+          "id": 3,
+          "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "kube_deployment_status_replicas_available{namespace=\"$namespace\", deployment=\"$deployment\"}",
+              "legendFormat": "available"
+            }
+          ]
+        }
+      ]
+    }
