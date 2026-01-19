@@ -35,6 +35,10 @@ alloy:
           source_labels = ["__meta_kubernetes_pod_controller_name"]
           target_label  = "controller"
         }
+        rule {
+          source_labels = ["discovered_level"]
+          target_label  = "log_level"
+        }
       }
 
       loki.source.kubernetes "pods" {
