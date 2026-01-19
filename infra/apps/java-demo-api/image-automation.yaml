@@ -6,6 +6,9 @@ metadata:
 spec:
   image: ghcr.io/robert-fekete/kubernetes-demo-java-api
   interval: 1m
+  exclusionList:
+    - '^latest$'
+    - '^.*\.sig$'
 
 ---
 apiVersion: image.toolkit.fluxcd.io/v1beta2
