@@ -38,6 +38,13 @@ data:
             "label": "Deployment",
             "query": "java-demo-api",
             "hide": 0
+          },
+          {
+            "name": "canary_target",
+            "type": "constant",
+            "label": "Canary target label",
+            "query": "api-local-health",
+            "hide": 0
           }
         ]
       },
@@ -106,7 +113,7 @@ data:
           "targets": [
             {
               "refId": "A",
-              "expr": "avg_over_time(probe_success{canary_target="api-local-health"}[1m])",
+              "expr": "avg_over_time(probe_success{canary_target=\"$canary_target\"}[1m])",
               "legendFormat": "success"
             }
           ],
