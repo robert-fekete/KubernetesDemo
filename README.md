@@ -5,6 +5,7 @@
   - [Degraded service](#degraded-service)
   - [Degraded p95](#degraded-p95)
   - [Crash loop](#crash-loop)
+  - [Horizontal Pod Autoscaler](#horizontal-pod-autoscaling)
 - [Manual setup steps](#manual-setup-steps)
   - [Setting up a k3s cluster](#setting-up-a-k3s-cluster)
   - [Setting up Add-ons](#setting-up-add-ons)
@@ -147,7 +148,76 @@ Looking at the logs we can see the startup sequence being repeated every 5 minut
 
 [![Logs crash loop](screenshots/crash-loop-logs.png)](screenshots/crash-loop-logs.png)
 
+## Horizontal Pod Autoscaling
+Setting up HPA (Horizontal Pod Autoscaling) can enable a pod to scale out and scale in to adjust to the workload. Instead of hard coded replica counts, the cluster can increase and decrease the number of replicas to meet the load. 
 
+I [set up](https://github.com/robert-fekete/KubernetesDemo/commit/ddb6ec958808fedf60ffb70bc48288fad212678f) for the demo app and started a high frequency parallel polling to trigger the scaling out.
+
+### Scaling out
+The dashboard nicely shows that as the RPS jumped the CPU metrics followed. When the cluster detected the CPU being above the scale out limit (~150m), it started adding new replicas.
+
+[![Dashboard HPA](screenshots/hpa1.png)](screenshots/hpa1.png)
+
+Below graph nicely shows how the load adjusted and normalized with the new pods. The CPU metric of the first pod (red line) shot way over the limit (~220m), which triggered the addition of the new pod (purple line). The seond line only reached ~186m before dropping and with each following replica the CPU overshoot decreased. The CPU of last replica (yellow line) only reached ~147m.
+
+The CPU load of all five replicas then normalized around 150m.
+
+[![Dashboard CPU](screenshots/hpa2.PNG)](screenshots/hpa2.PNG)
+
+### Events
+The events also give a good view of what happened inside the cluster. 
+```
+LAST SEEN   TYPE      REASON                         OBJECT                                  MESSAGE
+51m         Normal    Scheduled                      pod/java-demo-api-7768f68794-nhxpv      Successfully assigned java-demo/java-demo-api-7768f68794-nhxpv to k3d-k8s-demo-agent-2
+52m         Normal    Scheduled                      pod/java-demo-api-7768f68794-qx2b2      Successfully assigned java-demo/java-demo-api-7768f68794-qx2b2 to k3d-k8s-demo-agent-2
+51m         Normal    Scheduled                      pod/java-demo-api-7768f68794-grl8z      Successfully assigned java-demo/java-demo-api-7768f68794-grl8z to k3d-k8s-demo-agent-1
+52m         Normal    Scheduled                      pod/java-demo-api-7768f68794-zbbwk      Successfully assigned java-demo/java-demo-api-7768f68794-zbbwk to k3d-k8s-demo-agent-0
+51m         Normal    Scheduled                      pod/java-demo-api-7768f68794-qtckg      Successfully assigned java-demo/java-demo-api-7768f68794-qtckg to k3d-k8s-demo-server-0
+52m         Normal    ScalingReplicaSet              deployment/java-demo-api                Scaled up replica set java-demo-api-7768f68794 to 1
+52m         Normal    SuccessfulCreate               replicaset/java-demo-api-7768f68794     Created pod: java-demo-api-7768f68794-qx2b2
+52m         Normal    Pulling                        pod/java-demo-api-7768f68794-qx2b2      Pulling image "ghcr.io/robert-fekete/kubernetes-demo-java-api:20260120170540-886ae8e"
+52m         Normal    Pulled                         pod/java-demo-api-7768f68794-qx2b2      Successfully pulled image "ghcr.io/robert-fekete/kubernetes-demo-java-api:20260120170540-886ae8e" in 3.095s (3.095s including waiting). Image size: 99695988 bytes.
+52m         Normal    Started                        pod/java-demo-api-7768f68794-qx2b2      Started container java-demo-api
+52m         Normal    Created                        pod/java-demo-api-7768f68794-qx2b2      Created container java-demo-api
+52m         Normal    UpgradeSucceeded               helmrelease/java-demo-api               Helm upgrade succeeded for release java-demo/java-demo-api.v19 with chart java-demo-api@0.2.0
+52m         Normal    SuccessfulCreate               replicaset/java-demo-api-7768f68794     Created pod: java-demo-api-7768f68794-zbbwk
+52m         Normal    SuccessfulRescale              horizontalpodautoscaler/java-demo-api   New size: 2; reason: cpu resource utilization (percentage of request) above target
+52m         Normal    ScalingReplicaSet              deployment/java-demo-api                Scaled up replica set java-demo-api-7768f68794 to 2 from 1
+52m         Normal    Pulling                        pod/java-demo-api-7768f68794-zbbwk      Pulling image "ghcr.io/robert-fekete/kubernetes-demo-java-api:20260120170540-886ae8e"
+52m         Normal    Pulled                         pod/java-demo-api-7768f68794-zbbwk      Successfully pulled image "ghcr.io/robert-fekete/kubernetes-demo-java-api:20260120170540-886ae8e" in 17.392s (17.392s including waiting). Image size: 99695988 bytes.
+52m         Normal    Started                        pod/java-demo-api-7768f68794-zbbwk      Started container java-demo-api
+52m         Normal    Created                        pod/java-demo-api-7768f68794-zbbwk      Created container java-demo-api
+51m         Normal    SuccessfulCreate               replicaset/java-demo-api-7768f68794     Created pod: java-demo-api-7768f68794-qtckg
+51m         Normal    SuccessfulCreate               replicaset/java-demo-api-7768f68794     Created pod: java-demo-api-7768f68794-grl8z
+51m         Normal    ScalingReplicaSet              deployment/java-demo-api                Scaled up replica set java-demo-api-7768f68794 to 4 from 2
+51m         Normal    SuccessfulRescale              horizontalpodautoscaler/java-demo-api   New size: 4; reason: cpu resource utilization (percentage of request) above target
+51m         Normal    Pulling                        pod/java-demo-api-7768f68794-qtckg      Pulling image "ghcr.io/robert-fekete/kubernetes-demo-java-api:20260120170540-886ae8e"
+51m         Normal    Pulling                        pod/java-demo-api-7768f68794-grl8z      Pulling image "ghcr.io/robert-fekete/kubernetes-demo-java-api:20260120170540-886ae8e"
+51m         Normal    Pulled                         pod/java-demo-api-7768f68794-qtckg      Successfully pulled image "ghcr.io/robert-fekete/kubernetes-demo-java-api:20260120170540-886ae8e" in 1.403s (1.403s including waiting). Image size: 99695988 bytes.
+51m         Normal    Created                        pod/java-demo-api-7768f68794-qtckg      Created container java-demo-api
+51m         Normal    Started                        pod/java-demo-api-7768f68794-qtckg      Started container java-demo-api
+51m         Normal    ScalingReplicaSet              deployment/java-demo-api                Scaled up replica set java-demo-api-7768f68794 to 5 from 4
+51m         Normal    SuccessfulRescale              horizontalpodautoscaler/java-demo-api   New size: 5; reason:
+51m         Normal    SuccessfulCreate               replicaset/java-demo-api-7768f68794     Created pod: java-demo-api-7768f68794-nhxpv
+51m         Normal    Created                        pod/java-demo-api-7768f68794-nhxpv      Created container java-demo-api
+51m         Normal    Started                        pod/java-demo-api-7768f68794-nhxpv      Started container java-demo-api
+51m         Normal    Pulled                         pod/java-demo-api-7768f68794-nhxpv      Container image "ghcr.io/robert-fekete/kubernetes-demo-java-api:20260120170540-886ae8e" already present on machine
+51m         Normal    Started                        pod/java-demo-api-7768f68794-grl8z      Started container java-demo-api
+51m         Normal    Created                        pod/java-demo-api-7768f68794-grl8z      Created container java-demo-api
+51m         Normal    Pulled                         pod/java-demo-api-7768f68794-grl8z      Successfully pulled image "ghcr.io/robert-fekete/kubernetes-demo-java-api:20260120170540-886ae8e" in 27.02s (27.02s including waiting). Image size: 99695988 bytes.
+```
+
+### Events
+```
+36m         Normal    SuccessfulDelete               replicaset/java-demo-api-7768f68794     Deleted pod: java-demo-api-7768f68794-nhxpv
+36m         Normal    Killing                        pod/java-demo-api-7768f68794-nhxpv      Stopping container java-demo-api
+36m         Normal    SuccessfulRescale              horizontalpodautoscaler/java-demo-api   New size: 4; reason: All metrics below target
+36m         Normal    ScalingReplicaSet              deployment/java-demo-api                Scaled down replica set java-demo-api-7768f68794 to 4 from 5
+36m         Normal    Killing                        pod/java-demo-api-7768f68794-grl8z      Stopping container java-demo-api
+36m         Normal    SuccessfulDelete               replicaset/java-demo-api-7768f68794     Deleted pod: java-demo-api-7768f68794-grl8z
+36m         Normal    SuccessfulRescale              horizontalpodautoscaler/java-demo-api   New size: 3; reason: All metrics below target
+36m         Normal    ScalingReplicaSet              deployment/java-demo-api                Scaled down replica set java-demo-api-7768f68794 to 3 from 4
+```
 
 # Manual setup steps
 - Set up a k3s cluster
