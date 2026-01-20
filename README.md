@@ -11,6 +11,69 @@
   - [Dependencies](#dependencies)
   - [Next steps](#next-steps)
 
+# Scenarios
+## Pod failure
+This scenario demonstrates how to detect a pod failure and recovery. I shut down the underlying node, which makes Kubernetes reschedule the pod on another available node. 
+
+#### Commands:
+```
+# Check what node the pod is running on
+kubectl -n java-demo get pods -o wide
+
+# Stop node
+k3d node stop k3d-k8s-demo-agent-2
+
+# Start node (after troubleshooting is done)
+k3d node start k3d-k8s-demo-agent-2
+```
+
+#### Node state
+`k3d-k8s-demo-agent-2` is in `NotReady` state after it was stopped
+```
+root@ubuntu:# kubectl get nodes
+NAME                    STATUS     ROLES                  AGE     VERSION
+k3d-k8s-demo-agent-0    Ready      <none>                 2d16h   v1.31.5+k3s1
+k3d-k8s-demo-agent-1    Ready      <none>                 2d16h   v1.31.5+k3s1
+k3d-k8s-demo-agent-2    NotReady   <none>                 2d16h   v1.31.5+k3s1
+k3d-k8s-demo-server-0   Ready      control-plane,master   2d16h   v1.31.5+k3s1
+```
+
+#### Pod state
+Pod `java-demo-api-5b876b98f8-nc7ct` went from `Running` to `Terminating` after the node died. It can be seen in the events (below) that Kubernetes waits 5 mins before eviction to eliminate transient issues.
+Pod `java-demo-api-5b876b98f8-qkrdc` was created on a different node and went from `Pending` to `ContainerCreating` and then to `Running`
+
+```
+root@ubuntu:# kubectl -n java-demo get pods -w
+NAME                             READY   STATUS    RESTARTS   AGE
+java-demo-api-5b876b98f8-nc7ct   1/1     Running   0          28m
+java-demo-api-5b876b98f8-nc7ct   1/1     Terminating   0          28m
+java-demo-api-5b876b98f8-qkrdc   0/1     Pending       0          0s
+java-demo-api-5b876b98f8-qkrdc   0/1     Pending       0          0s
+java-demo-api-5b876b98f8-qkrdc   0/1     ContainerCreating   0          0s
+java-demo-api-5b876b98f8-qkrdc   1/1     Running             0          15s
+```
+
+#### Events
+A `NodeNotReady` warning was issues when the node went under and 5 mins later a new pod was created. The previous pod was evicted and it can be seen that a new container was set up (pulling image, etc)
+
+```
+root@ubuntu:# kubectl -n java-demo get events --sort-by=.lastTimestamp
+16m         Warning   NodeNotReady           pod/java-demo-api-5b876b98f8-nc7ct    Node is not ready
+11m         Normal    SuccessfulCreate       replicaset/java-demo-api-5b876b98f8   Created pod: java-demo-api-5b876b98f8-qkrdc
+11m         Normal    TaintManagerEviction   pod/java-demo-api-5b876b98f8-nc7ct    Marking for deletion Pod java-demo/java-demo-api-5b876b98f8-nc7ct
+11m         Normal    Pulling                pod/java-demo-api-5b876b98f8-qkrdc    Pulling image "ghcr.io/robert-fekete/kubernetes-demo-java-api:20260119133826-07eb52b"
+11m         Normal    Started                pod/java-demo-api-5b876b98f8-qkrdc    Started container java-demo-api
+11m         Normal    Created                pod/java-demo-api-5b876b98f8-qkrdc    Created container java-demo-api
+11m         Normal    Pulled                 pod/java-demo-api-5b876b98f8-qkrdc    Successfully pulled image "ghcr.io/robert-fekete/kubernetes-demo-java-api:20260119133826-07eb52b" in 13.424s (13.424s including waiting). Image size: 99695988 bytes.
+```
+
+#### Dashboard
+It can be seen that both the deployment replicas count and the canary success dropped to zero in the five minutes interval that the cluster was waiting before evicting the old pod and creating a new one. 
+
+On the RPS graph a similar drop can be seen as the Envoy proxy had zero healthy endpoints and couldn't forward the request.
+[![Dashboard node failure](screenshots/node-failure.png)](screenshots/node-failure.png)
+
+
 # Manual setup steps
 - Set up a k3s cluster
 - Set up add-ons
