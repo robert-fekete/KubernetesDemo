@@ -109,14 +109,14 @@ The pod replica count and the canary are both stable, showing that the app is st
 I added a [deterministic crash](https://github.com/robert-fekete/KubernetesDemoJavaAPI/commit/c2f3b5273f3827ab9142505100e77004a9bf68da) in the demo app to simulate a crash loop.
 
 #### Dashboard
-The dashboard looks pretty straight. All request metrics are down, pod replica count is zero and the canary is dead. 
+The dashboard looks pretty straight-forward. All request metrics are down, pod replica count is zero and the canary is dead. 
 
-This is due to the fact that kubernetes can't bring the pod up, due to the deterministic crash.
+This is due to the fact that kubernetes can't bring the pod up, because of the deterministic crash.
 
 [![Dashboard crash loop](screenshots/crash-loop.png)](screenshots/crash-loop.png)
 
 #### Kubernetes events
-The kubernetes event log shows a clear picture of what is happening. The new container was pulled and a new container was created. There is a warning about the `BackOff`.
+The kubernetes event log shows a clear picture of what is happening. The new image was pulled and a new container was created. There is a warning about the `BackOff`.
 ```
 root@ubuntu:# kubectl -n java-demo get events --sort-by=.lastTimestamp
 37s         Normal    Pulled              pod/java-demo-api-7f559989dc-hklj9    Container image "ghcr.io/robert-fekete/kubernetes-demo-java-api:20260120160230-c2f3b52" already present on machine
