@@ -1,5 +1,7 @@
 
 # Table of Contents
+- [Scenarios](#scenarios)
+  - [Pod failure](#pod-failure)
 - [Manual setup steps](#manual-setup-steps)
   - [Setting up a k3s cluster](#setting-up-a-k3s-cluster)
   - [Setting up Add-ons](#setting-up-add-ons)
@@ -40,6 +42,7 @@ k3d-k8s-demo-server-0   Ready      control-plane,master   2d16h   v1.31.5+k3s1
 
 #### Pod state
 Pod `java-demo-api-5b876b98f8-nc7ct` went from `Running` to `Terminating` after the node died. It can be seen in the events (below) that Kubernetes waits 5 mins before eviction to eliminate transient issues.
+
 Pod `java-demo-api-5b876b98f8-qkrdc` was created on a different node and went from `Pending` to `ContainerCreating` and then to `Running`
 
 ```
@@ -71,6 +74,7 @@ root@ubuntu:# kubectl -n java-demo get events --sort-by=.lastTimestamp
 It can be seen that both the deployment replicas count and the canary success dropped to zero in the five minutes interval that the cluster was waiting before evicting the old pod and creating a new one. 
 
 On the RPS graph a similar drop can be seen as the Envoy proxy had zero healthy endpoints and couldn't forward the request.
+
 [![Dashboard node failure](screenshots/node-failure.png)](screenshots/node-failure.png)
 
 
