@@ -5,7 +5,9 @@ metadata:
   labels:
     app.kubernetes.io/name: java-demo-api
 spec:
+{{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
+{{- end }}
   selector:
     matchLabels:
       app.kubernetes.io/name: java-demo-api
