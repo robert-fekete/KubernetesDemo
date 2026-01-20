@@ -1,2 +1,2 @@
 image:
-  ref: "ghcr.io/robert-fekete/kubernetes-demo-java-api:20260120160230-c2f3b52" # {"$imagepolicy": "flux-system:java-demo-api"}
+  ref: "ghcr.io/robert-fekete/kubernetes-demo-java-api:20260120163452-65756f2" # {"$imagepolicy": "flux-system:java-demo-api"}
