@@ -4,6 +4,7 @@
   - [Pod failure](#pod-failure)
   - [Degraded service](#degraded-service)
   - [Degraded p95](#degraded-p95)
+  - [Crash loop](#crash-loop)
 - [Manual setup steps](#manual-setup-steps)
   - [Setting up a k3s cluster](#setting-up-a-k3s-cluster)
   - [Setting up Add-ons](#setting-up-add-ons)
@@ -103,6 +104,50 @@ What stands out in this scenario is the difference between p50 and p95. The two 
 The pod replica count and the canary are both stable, showing that the app is stable in the long run and it can catch up with the load.
 
 [![Dashboard degraded p95](screenshots/degraded-p95.png)](screenshots/degraded-p95.png)
+
+## Crash loop
+I added a [deterministic crash](https://github.com/robert-fekete/KubernetesDemoJavaAPI/commit/c2f3b5273f3827ab9142505100e77004a9bf68da) in the demo app to simulate a crash loop.
+
+#### Dashboard
+The dashboard looks pretty straight. All request metrics are down, pod replica count is zero and the canary is dead. 
+
+This is due to the fact that kubernetes can't bring the pod up, due to the deterministic crash.
+
+[![Dashboard crash loop](screenshots/crash-loop.png)](screenshots/crash-loop.png)
+
+#### Kubernetes events
+The kubernetes event log shows a clear picture of what is happening. The new container was pulled and a new container was created. There is a warning about the `BackOff`.
+```
+root@ubuntu:# kubectl -n java-demo get events --sort-by=.lastTimestamp
+37s         Normal    Pulled              pod/java-demo-api-7f559989dc-hklj9    Container image "ghcr.io/robert-fekete/kubernetes-demo-java-api:20260120160230-c2f3b52" already present on machine
+37s         Normal    Started             pod/java-demo-api-7f559989dc-hklj9    Started container java-demo-api
+37s         Normal    Created             pod/java-demo-api-7f559989dc-hklj9    Created container java-demo-api
+10s         Warning   BackOff             pod/java-demo-api-7f559989dc-hklj9    Back-off restarting failed container java-demo-api in pod java-demo-api-7f559989dc-hklj9_java-demo(456c7b71-ad4c-4670-af35-70a7ea7d843a)
+```
+
+#### Pod status
+We can see some further information when looking at the pods. 
+
+We can see the pod in the `Error` state right after the crash...
+```
+root@ubuntu:# kubectl -n java-demo get pods
+NAME                             READY   STATUS   RESTARTS       AGE
+java-demo-api-7f559989dc-hklj9   0/1     Error    5 (106s ago)   3m34s
+```
+
+... which transitions into the `CrashLoopBackoff` to wait between the restarts.
+```
+root@ubuntu:# kubectl -n java-demo get pods
+NAME                             READY   STATUS             RESTARTS      AGE
+java-demo-api-7f559989dc-hklj9   0/1     CrashLoopBackOff   4 (76s ago)   3m4s
+```
+
+### Logs
+Looking at the logs we can see the startup sequence being repeated every 5 minutes. That's a dead giveaway of a crashloop. The 5 minutes period is due to the cluster backoff. It waits 5 minutes between restarts, so it doesn't overwhelm the node with empty cycles.
+
+[![Logs crash loop](screenshots/crash-loop-logs.png)](screenshots/crash-loop-logs.png)
+
+
 
 # Manual setup steps
 - Set up a k3s cluster
