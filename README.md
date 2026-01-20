@@ -1,4 +1,16 @@
 
+# Table of Contents
+- [Manual setup steps](#manual-setup-steps)
+  - [Setting up a k3s cluster](#setting-up-a-k3s-cluster)
+  - [Setting up Add-ons](#setting-up-add-ons)
+  - [Setting up Gateway](#setting-up-gateway)
+  - [Setting up Flux](#setting-up-flux)
+- [Flux managed operations](#flux-managed-operations)
+- [Useful commands](#useful-commands)
+- [Appendix](#appendix)
+  - [Dependencies](#dependencies)
+  - [Next steps](#next-steps)
+
 # Manual setup steps
 - Set up a k3s cluster
 - Set up add-ons
@@ -337,15 +349,6 @@ kubectl get httproutes -A -l kustomize.toolkit.fluxcd.io/name=platform
 
 ```
 
-
-# Next steps
-- What’s next after these installs?
-- Create your Java API Helm chart + a GitHub Actions workflow to build/push the image to GHCR.
-- Delete www.example.com route
-- Flux image automation (optional but nice) to update the image tag in Git automatically.
-- HPA?
-
-
 # Useful commands
 #### Current config context
 `kubectl config current-context`
@@ -456,3 +459,10 @@ flux version
 
 # Pre-flight checks
 flux check --pre
+
+## Next steps
+- What’s next after these installs?
+- Create your Java API Helm chart + a GitHub Actions workflow to build/push the image to GHCR.
+- Delete www.example.com route
+- Flux image automation (optional but nice) to update the image tag in Git automatically.
+- HPA?
