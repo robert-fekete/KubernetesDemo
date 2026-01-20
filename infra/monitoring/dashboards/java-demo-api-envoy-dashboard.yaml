@@ -124,30 +124,6 @@ data:
             },
             "overrides": []
           }
-        },
-        {
-          "type": "timeseries",
-          "title": "Canary HTTP status code (sum over min)",
-          "id": 23,
-          "gridPos": { "x": 16, "y": 17, "w": 8, "h": 7 },
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "targets": [
-            {
-              "refId": "A",
-              "expr": "sum_over_time(((probe_http_status_code{canary_target=\"$canary_target\"} >= bool 200) * (probe_http_status_code{canary_target=\"$canary_target\"} < bool 400))[1m])",
-              "legendFormat": "2xx/3xx"
-            },
-            {
-              "refId": "B",
-              "expr": "sum_over_time(((probe_http_status_code{canary_target=\"$canary_target\"} >= bool 400) * (probe_http_status_code{canary_target=\"$canary_target\"} < bool 500))[1m])",
-              "legendFormat": "4xx"
-            },
-            {
-              "refId": "C",
-              "expr": "sum_over_time(((probe_http_status_code{canary_target=\"$canary_target\"} >= bool 500) * (probe_http_status_code{canary_target=\"$canary_target\"} < bool 600))[1m])",
-              "legendFormat": "5xx"
-            }
-          ]
         }
       ]
     }
