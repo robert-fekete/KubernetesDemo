@@ -1,5 +1,6 @@
 
 # Table of Contents
+- [Overview](#overview)
 - [Scenarios](#scenarios)
   - [Pod failure](#pod-failure)
   - [Degraded service](#degraded-service)
@@ -15,7 +16,15 @@
 - [Useful commands](#useful-commands)
 - [Appendix](#appendix)
   - [Dependencies](#dependencies)
-  - [Next steps](#next-steps)
+
+# Overview
+This project shows end-to-end know-how for Kubernetes. 
+
+The project is build on k3s/k3d (1 controller + 3 nodes) managed with Flux GitOps. It uses Grafana+Prometheus for monitoring and metrics and it uses Loki/Alloy to collect and handle logs. An Envoy gateway is used as an entry point to the cluster. There is a simple [Java demo app](https://github.com/robert-fekete/KubernetesDemoJavaAPI) deployed in a Docker container with HPA. 
+
+In the [scenarios](#scenarios) section, I use the demo app to simulate certain operational incindents (pod failure, crash loops, etc.) and the steps to troubleshoot them.
+
+I also covered [the steps needed](#manual-setup-steps) to set up such a cluster. I collected some [useful commands](#useful-commands) that can help in troubleshooting and also the [commands needed to manage Flux](#flux-managed-operations). Lastly, I covered [the dependencies](#dependencies) of the project and how to set them up.
 
 # Scenarios
 ## Pod failure
@@ -677,10 +686,3 @@ flux version
 
 # Pre-flight checks
 flux check --pre
-
-## Next steps
-- What’s next after these installs?
-- Create your Java API Helm chart + a GitHub Actions workflow to build/push the image to GHCR.
-- Delete www.example.com route
-- Flux image automation (optional but nice) to update the image tag in Git automatically.
-- HPA?
