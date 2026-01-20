@@ -10,10 +10,7 @@ spec:
   hostnames:
     - api.local
   rules:
-    - timeouts:
-        request: 70s        # end-to-end request timeout
-        backendRequest: 70s # (optional) per-try upstream timeout
-      matches:
+    - matches:
         - path:
             type: PathPrefix
             value: /

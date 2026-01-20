@@ -31,7 +31,7 @@ spec:
         # This module is what adds: Host: api.local
         http_java_demo_api_health:
           prober: http
-          timeout: 70s
+          timeout: 10s
           http:
             method: GET
             headers:
