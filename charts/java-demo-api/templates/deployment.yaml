@@ -21,19 +21,5 @@ spec:
           ports:
             - name: http
               containerPort: 9000
-          env:
-            - name: SQLITE_PATH
-              value: "{{ .Values.sqlite.mountPath }}/app.db"
-          {{- if .Values.sqlite.enabled }}
-          volumeMounts:
-            - name: sqlite-data
-              mountPath: {{ .Values.sqlite.mountPath }}
-          {{- end }}
           resources:
 {{ toYaml .Values.resources | indent 12 }}
-      {{- if .Values.sqlite.enabled }}
-      volumes:
-        - name: sqlite-data
-          persistentVolumeClaim:
-            claimName: java-api-sqlite
-      {{- end }}

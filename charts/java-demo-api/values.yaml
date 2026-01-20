@@ -8,8 +8,3 @@ service:
   port: 9000
 
 resources: {}
-
-sqlite:
-  enabled: true
-  pvcSize: 1Gi
-  mountPath: /data
