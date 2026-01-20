@@ -97,6 +97,26 @@ data:
           ]
         },
         {
+          "type": "timeseries",
+          "title": "Pod CPU (mCPU) - java-demo-api",
+          "id": 4,
+          "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum by (pod) (rate(container_cpu_usage_seconds_total{namespace=\"$namespace\", pod=~\"$deployment-.*\", container!=\"\", image!=\"\"}[2m])) * 1000",
+              "legendFormat": "{{pod}}"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "mcpu"
+            },
+            "overrides": []
+          }
+        },
+        {
           "type": "row",
           "title": "Canary (blackbox Probe to /health via Gateway)",
           "id": 20,
