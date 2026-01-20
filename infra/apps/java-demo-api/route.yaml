@@ -12,7 +12,6 @@ spec:
   rules:
     - timeouts:
         request: 70s        # end-to-end request timeout
-        idle: 70s           # allow slow responses without stream-idle reset
         backendRequest: 70s # (optional) per-try upstream timeout
       matches:
         - path:
