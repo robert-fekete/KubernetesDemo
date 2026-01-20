@@ -10,7 +10,9 @@ spec:
   hostnames:
     - api.local
   rules:
-    - matches:
+    - timeouts:
+        request: 70s   # allow slow responses through Envoy
+      matches:
         - path:
             type: PathPrefix
             value: /
