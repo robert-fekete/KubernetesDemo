@@ -199,11 +199,35 @@ LAST SEEN   TYPE      REASON                         OBJECT                     
 51m         Normal    SuccessfulCreate               replicaset/java-demo-api-7768f68794     Created pod: java-demo-api-7768f68794-nhxpv
 51m         Normal    Created                        pod/java-demo-api-7768f68794-nhxpv      Created container java-demo-api
 51m         Normal    Started                        pod/java-demo-api-7768f68794-nhxpv      Started container java-demo-api
-51m         Normal    Pulled                         pod/java-demo-api-7768f68794-nhxpv      Container image "ghcr.io/robert-fekete/kubernetes-demo-java-api:20260120170540-886ae8e" already present on machine
 51m         Normal    Started                        pod/java-demo-api-7768f68794-grl8z      Started container java-demo-api
 51m         Normal    Created                        pod/java-demo-api-7768f68794-grl8z      Created container java-demo-api
 ```
 
+## Scaling in
+After the cluster stabalized I reduced the polling rate to ~60% of the peak. This allowed the CPU metrics to drop and autoscaling reacted to it by removing two replica pods.
+
+The Deployment replicas graph shows how the number of replicas drops from 5 to 3 while the Pod CPU graph shows that the lines for two pods (green + yellow) first drop and then disappears.
+
+[![Dashboard Scaling In](screenshots/hpa3.PNG)](screenshots/hpa3.PNG)
+
+### Events
+The events give a detailed view here as well. 
+
+For both pods:
+- The pod is deleted
+- The container is stopped
+- The HPA size is adjusted
+
+```
+36m         Normal    SuccessfulDelete               replicaset/java-demo-api-7768f68794     Deleted pod: java-demo-api-7768f68794-nhxpv
+36m         Normal    Killing                        pod/java-demo-api-7768f68794-nhxpv      Stopping container java-demo-api
+36m         Normal    SuccessfulRescale              horizontalpodautoscaler/java-demo-api   New size: 4; reason: All metrics below target
+36m         Normal    ScalingReplicaSet              deployment/java-demo-api                Scaled down replica set java-demo-api-7768f68794 to 4 from 5
+36m         Normal    Killing                        pod/java-demo-api-7768f68794-grl8z      Stopping container java-demo-api
+36m         Normal    SuccessfulDelete               replicaset/java-demo-api-7768f68794     Deleted pod: java-demo-api-7768f68794-grl8z
+36m         Normal    SuccessfulRescale              horizontalpodautoscaler/java-demo-api   New size: 3; reason: All metrics below target
+36m         Normal    ScalingReplicaSet              deployment/java-demo-api                Scaled down replica set java-demo-api-7768f68794 to 3 from 4
+```
 
 # Manual setup steps
 - Set up a k3s cluster
