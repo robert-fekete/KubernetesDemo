@@ -91,6 +91,15 @@ Next, one can look into the logs, that can help further narrow the scope. Any ap
 
 [![Logs degraded service](screenshots/degraded-app-logs.png)](screenshots/degraded-app-logs.png)
 
+## Degraded p95
+A different kind of degradation when functionality is not affected, but the latency of some of the requests stand out. Typically, the reason behind this is unique large objects (e.g. a user with a lot of items in the shopping cart).
+
+I added a [random delay for 10% of the requests](https://github.com/robert-fekete/KubernetesDemoJavaAPI/commit/78f6540e5a00e5b2e5c6e12610a9418d7dcd6966) in the demo app to simulate slow worksloads. 
+
+#### Dashboard
+What stands out in this scenario is the difference between p50 and p95. The two graphs diverged and p95 is around 8000ms. 
+
+[![Dashboard degraded p95](screenshots/degraded-p95.png)](screenshots/degraded-p95.png)
 
 # Manual setup steps
 - Set up a k3s cluster
