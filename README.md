@@ -2,6 +2,7 @@
 # Table of Contents
 - [Scenarios](#scenarios)
   - [Pod failure](#pod-failure)
+  - [Degraded service](#degraded-service)
 - [Manual setup steps](#manual-setup-steps)
   - [Setting up a k3s cluster](#setting-up-a-k3s-cluster)
   - [Setting up Add-ons](#setting-up-add-ons)
@@ -76,6 +77,19 @@ It can be seen that both the deployment replicas count and the canary success dr
 On the RPS graph a similar drop can be seen as the Envoy proxy had zero healthy endpoints and couldn't forward the request.
 
 [![Dashboard node failure](screenshots/node-failure.png)](screenshots/node-failure.png)
+
+## Degraded service
+I added a [random error in the health endpoint code](https://github.com/robert-fekete/KubernetesDemoJavaAPI/commit/f297e3c10e305bf913f37ffd9af37edec8426d47) in the demo app to simulate a degraded service. The health endpoint has a 33% chance to fail.
+
+#### Dashboard
+The important thing to see here is a stable pod replica count with an unstable canary. With the two graphs it's easy to narrow down the issue to an application/scaling problem. The fact that the p95 and p50 latency numbers are closed to each other suggests an application issue rather than performance issues.
+
+[![Dashboard degraded service](screenshots/degraded-app.png)](screenshots/degraded-app.png)
+
+#### Logs
+Next, one can look into the logs, that can help further narrow the scope. Any application error should show up in the logs. If logs are clean then it's probably a scaling issue (brownout).
+
+[![Logs degraded service](screenshots/degraded-app-logs.png)](screenshots/degraded-app-logs.png)
 
 
 # Manual setup steps
