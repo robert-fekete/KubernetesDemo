@@ -3,6 +3,7 @@
 - [Scenarios](#scenarios)
   - [Pod failure](#pod-failure)
   - [Degraded service](#degraded-service)
+  - [Degraded p95](#degraded-p95)
 - [Manual setup steps](#manual-setup-steps)
   - [Setting up a k3s cluster](#setting-up-a-k3s-cluster)
   - [Setting up Add-ons](#setting-up-add-ons)
@@ -98,6 +99,8 @@ I added a [random delay for 10% of the requests](https://github.com/robert-feket
 
 #### Dashboard
 What stands out in this scenario is the difference between p50 and p95. The two graphs diverged and p95 is around 8000ms. 
+
+The pod replica count and the canary are both stable, showing that is stable in the long run and it can catch up with the load.
 
 [![Dashboard degraded p95](screenshots/degraded-p95.png)](screenshots/degraded-p95.png)
 
